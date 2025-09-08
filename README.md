@@ -1,22 +1,57 @@
-### The ADK in Practice: How Termux:X11's Open-Source License Reinforces a Modular Blueprint
+### **Structure of the ADK-Aligned Termux Agent**
 
-The architecture of the Termux agent, as a real-world application of the Agent Development Kit (ADK) philosophy, is deeply rooted in the principles of creating independent, modular, and reusable components. This strategic design, which promotes a robust, scalable, and maintainable agent, is further reinforced by the open-source licensing of its core components, such as Termux:X11.
+This architecture is designed with clear separation of concerns, resulting in three primary, independent modules.
 
-The Termux:X11 project is available under the GNU General Public License version 3.0 (GPLv3). This choice of license is significant as it aligns with and encourages the very modularity and reusability that the ADK espouses. The GPLv3 ensures that the Termux:X11 component, which acts as the graphical server for the agent, remains open and accessible. This allows developers to freely use, modify, and distribute the software, fostering a collaborative environment where improvements and adaptations can be shared.
+---
 
-#### **1. Independent Frontend Module: The User Interaction Layer**
+#### **1. Frontend Module: The User Interaction Layer**
 
-*   **Component:** `frontend/` (Vite/React Application)
-*   **ADK Principle in Action:** Decoupling and Specialization. The frontend is a prime example of a specialized, independent module responsible for user interaction. It communicates with the backend via a well-defined API, allowing for independent development and technological flexibility. This means the user interface can be iterated upon without affecting the core logic of the agent.
+This module is exclusively responsible for everything the user sees and interacts with. It is a self-contained application.
 
-#### **2. Independent Backend Module: The Orchestration and Logic Core**
+*   **Directory:** `frontend/`
+*   **Technology:** Vite/React (or any modern web framework)
+*   **Core Responsibility:**
+    *   Render the user interface (chat window, input box, etc.).
+    *   Capture user input (natural language commands).
+    *   Send user commands to the Backend Module via an API call.
+    *   Receive results from the Backend Module and display them to the user.
+*   **Principle of Independence:**
+    *   The frontend has **no knowledge** of the AI model, the tools, or the internal logic of the backend.
+    *   It communicates **only** through a defined API endpoint (e.g., `/execute`).
+    *   This module can be developed, tested, and even completely replaced (e.g., with a Vue.js app) without requiring any changes to the other modules.
 
-*   **Component:** `backend/app.py` (Flask Application)
-*   **ADK Principle in Action:** Orchestration and Model-Agnosticism. The backend serves as the central orchestrator, managing workflows and remaining flexible in its choice of language models. By exposing endpoints as the single point of entry, it creates a clear boundary between the user interface and the agent's core logic. The model-specific interactions are a small, replaceable part of the codebase, demonstrating the ADK's principle of avoiding vendor lock-in.
+---
 
-#### **3. Independent Tool Module: The Action Execution Unit**
+#### **2. Backend Module: The Orchestration & Logic Core**
 
-*   **Component:** `execute_shell_command` function and the underlying Termux:X11 server.
-*   **ADK Principle in Action:** Modularity and Reusability. The `execute_shell_command` function is a modular tool with a single responsibility. This function, in conjunction with the Termux:X11 server, can be tested in isolation, ensuring its reliability. The open-source nature of Termux:X11 means this powerful tool for rendering graphical interfaces is not a black box. Developers can understand its inner workings, adapt it to their specific needs, and contribute back to the community, perfectly embodying the ADK's vision of a collaborative and extensible agent development ecosystem.
+This module acts as the central "brain" of the agent, receiving requests, coordinating with the AI model, and delegating tasks to the appropriate tools.
 
-In conclusion, the structure of the Termux agent, with its clear separation of concerns into independent frontend, backend, and tool modules, is a powerful and practical implementation of the Agent Development Kit's core tenets. The use of an open-source license like the GPLv3 for a critical component like Termux:X11 further strengthens this model by ensuring that the foundational tools remain open, adaptable, and freely reusable, fostering a more organized and efficient development process and laying a solid foundation for future expansion and adaptation.
+*   **File:** `backend/app.py`
+*   **Technology:** Flask (or any web server framework)
+*   **Core Responsibilities:**
+    *   Expose an API endpoint (`/execute`) for the Frontend Module.
+    *   Receive the user's command from the API request.
+    *   Communicate with the Large Language Model (e.g., Gemini) to interpret the command and determine which tool to use.
+    *   Call the appropriate function from the Tool Module based on the model's decision.
+    *   Return the result from the tool back to the Frontend Module.
+*   **Principle of Independence:**
+    *   The backend is **agnostic** about how the user interface looks or functions; it only cares about receiving data at its API endpoint.
+    *   It contains the **isolated business logic**, preventing complex decision-making from leaking into the presentation layer.
+    *   The connection to the specific AI model is a small, replaceable part of this module, making it **model-agnostic** in spirit.
+
+---
+
+#### **3. Tool Module: The Action Execution Unit**
+
+This module is a collection of simple, reusable functions that perform specific, real-world actions. It has no awareness of the user or the AI.
+
+*   **Component:** `execute_shell_command` function (and other potential tool functions within `backend/app.py` or a separate `tools.py` file).
+*   **Technology:** Python
+*   **Core Responsibility:**
+    *   Execute a single, well-defined task (e.g., run a shell command).
+    *   Accept specific, structured input (e.g., a string containing the command).
+    *   Return a specific, structured output (e.g., the standard output of the command).
+*   **Principle of Independence:**
+    *   This function has **zero knowledge** of the frontend, the Flask server, or the AI model. It is a pure, self-contained utility.
+    *   It can be **tested in complete isolation** to ensure its reliability.
+    *   It is highly **reusable** and could be easily integrated into a different agent or application.
